@@ -22,39 +22,48 @@ mongoose.connect(process.env.MONGO_URL)
 // Importar modelo Order
 const Order = require('./models/Order');
 
-// OpenAI configurado con tu clave
+// Inicializar OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_KEY
 });
 
-// Ruta webhook (ya la tenías)
+// Ruta para Webhook de Hyperzod
 app.use('/webhook', require('./routes/webhookRoutes'));
 
-// Ruta /chat para el chatbot
+// Ruta para el chatbot
 app.post('/chat', async (req, res) => {
   const { pregunta } = req.body;
+  console.log("📩 Pregunta recibida:", pregunta);
 
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4-turbo',
-    messages: [{ role: 'user', content: pregunta }],
-  });
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [{ role: 'user', content: pregunta }],
+    });
 
-  const respuestaGPT = completion.choices[0].message.content;
+    const respuestaGPT = completion.choices[0].message.content;
+    console.log("🧠 Respuesta GPT:", respuestaGPT);
 
-  const matchPedido = pregunta.match(/\d{4,}/);
-  if (matchPedido) {
-    const pedido = await Order.findOne({ order_id: matchPedido[0] });
-    if (pedido) {
-      return res.json({ mensaje: `Pedido #${pedido.order_id}: ${pedido.status_cliente}` });
-    } else {
-      return res.json({ mensaje: 'No encontré ese pedido, por favor verifica el número.' });
+    const matchPedido = pregunta.match(/\d{4,}/);
+    if (matchPedido) {
+      const pedido = await Order.findOne({ order_id: matchPedido[0] });
+      console.log("🔍 Pedido encontrado:", pedido);
+
+      if (pedido) {
+        return res.json({ mensaje: `Pedido #${pedido.order_id}: ${pedido.status_cliente}` });
+      } else {
+        return res.json({ mensaje: 'No encontré ese pedido, por favor verifica el número.' });
+      }
     }
-  }
 
-  res.json({ mensaje: respuestaGPT });
+    res.json({ mensaje: respuestaGPT });
+  } catch (error) {
+    console.error("❌ Error en /chat:", error);
+    res.status(500).json({ mensaje: "Error en el servidor." });
+  }
 });
 
-// Iniciar el servidor
+// Iniciar servidor
 app.listen(process.env.PORT, () => {
   console.log(`🚀 Servidor funcionando en puerto ${process.env.PORT}`);
 });
