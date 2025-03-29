@@ -5,21 +5,25 @@ require('dotenv').config();
 const OpenAI = require('openai');
 
 const app = express();
+
+// Configuración completa de CORS
+app.use(cors({
+  origin: '*',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true
+}));
+
 app.use(express.json());
-app.use(cors());
 
 mongoose.connect(process.env.MONGO_URL)
   .then(() => console.log('✅ MongoDB conectado correctamente'))
   .catch((err) => console.error('❌ Error MongoDB:', err));
 
 const Order = require('./models/Order');
-
 const openai = new OpenAI({ apiKey: process.env.OPENAI_KEY });
 
-// Ruta Webhook (la que ya tienes)
 app.use('/webhook', require('./routes/webhookRoutes'));
 
-// Nueva ruta Chatbot-GPT4
 app.post('/chat', async (req, res) => {
   const { pregunta } = req.body;
 
@@ -30,7 +34,6 @@ app.post('/chat', async (req, res) => {
 
   const respuestaGPT = completion.choices[0].message.content;
 
-  // Busca número de pedido en pregunta (si existe)
   const matchPedido = pregunta.match(/\d{4,}/);
   if (matchPedido) {
     const pedido = await Order.findOne({ order_id: matchPedido[0] });
