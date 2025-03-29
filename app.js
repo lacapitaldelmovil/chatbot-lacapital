@@ -6,7 +6,6 @@ const OpenAI = require('openai');
 
 const app = express();
 
-// Configuración completa de CORS
 app.use(cors({
   origin: '*',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -15,15 +14,23 @@ app.use(cors({
 
 app.use(express.json());
 
+// Conexión a MongoDB
 mongoose.connect(process.env.MONGO_URL)
   .then(() => console.log('✅ MongoDB conectado correctamente'))
   .catch((err) => console.error('❌ Error MongoDB:', err));
 
+// Importar modelo Order
 const Order = require('./models/Order');
-const openai = new OpenAI({ apiKey: process.env.OPENAI_KEY });
 
+// OpenAI configurado con tu clave
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_KEY
+});
+
+// Ruta webhook (ya la tenías)
 app.use('/webhook', require('./routes/webhookRoutes'));
 
+// Ruta /chat para el chatbot
 app.post('/chat', async (req, res) => {
   const { pregunta } = req.body;
 
@@ -47,6 +54,7 @@ app.post('/chat', async (req, res) => {
   res.json({ mensaje: respuestaGPT });
 });
 
+// Iniciar el servidor
 app.listen(process.env.PORT, () => {
   console.log(`🚀 Servidor funcionando en puerto ${process.env.PORT}`);
 });
