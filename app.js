@@ -67,3 +67,4 @@ app.post('/chat', async (req, res) => {
 app.listen(process.env.PORT, () => {
   console.log(`🚀 Servidor funcionando en puerto ${process.env.PORT}`);
 });
+
